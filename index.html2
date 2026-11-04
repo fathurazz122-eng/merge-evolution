@@ -1,0 +1,293 @@
+
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Merge Evolution</title>
+
+<style>
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: linear-gradient(135deg, #111827, #312e81);
+    color: white;
+    text-align: center;
+    min-height: 100vh;
+}
+
+header {
+    padding: 20px 10px;
+}
+
+h1 {
+    color: #facc15;
+    font-size: 30px;
+    margin-bottom: 5px;
+}
+
+.scoreboard {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin: 15px;
+}
+
+.score-box {
+    background: #1e293b;
+    padding: 12px 25px;
+    border-radius: 12px;
+    border: 1px solid #64748b;
+}
+
+.game-container {
+    width: 95%;
+    max-width: 420px;
+    margin: auto;
+    padding: 12px;
+    background: #1e293b;
+    border-radius: 18px;
+}
+
+#game {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    touch-action: manipulation;
+}
+
+.cell {
+    aspect-ratio: 1;
+    background: #334155;
+    border-radius: 12px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: clamp(27px, 9vw, 43px);
+    cursor: pointer;
+    user-select: none;
+    border: 2px solid transparent;
+    transition: 0.15s;
+}
+
+.cell.selected {
+    border-color: #facc15;
+    background: #475569;
+    transform: scale(.95);
+}
+
+.cell:active {
+    transform: scale(.94);
+}
+
+button {
+    background: #facc15;
+    color: #111827;
+    border: none;
+    padding: 12px 22px;
+    border-radius: 10px;
+    font-weight: bold;
+    font-size: 15px;
+    margin: 12px 5px;
+    cursor: pointer;
+}
+
+button:hover {
+    background: #fde047;
+}
+
+.instructions {
+    max-width: 420px;
+    margin: 20px auto;
+    padding: 15px;
+    color: #cbd5e1;
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+#message {
+    min-height: 25px;
+    color: #facc15;
+    font-weight: bold;
+}
+</style>
+</head>
+
+<body>
+
+<header>
+    <h1>🚀 MERGE EVOLUTION</h1>
+    <p>Gabungkan karakter dan jadilah yang terkuat!</p>
+</header>
+
+<div class="scoreboard">
+    <div class="score-box">
+        <div>SKOR</div>
+        <strong id="score">0</strong>
+    </div>
+    <div class="score-box">
+        <div>LEVEL</div>
+        <strong id="level">1</strong>
+    </div>
+</div>
+
+<div class="game-container">
+    <div id="game"></div>
+</div>
+
+<p id="message">Pilih dua karakter yang sama!</p>
+
+<button onclick="newGame()">🔄 Game Baru</button>
+
+<div class="instructions">
+    <h3>📖 Cara Bermain</h3>
+    1. Sentuh satu karakter di papan permainan.<br>
+    2. Sentuh karakter lain yang sama.<br>
+    3. Kedua karakter akan bergabung menjadi karakter evolusi berikutnya.<br>
+    4. Dapatkan skor tertinggi dengan melakukan evolusi!
+</div>
+
+<script>
+const characters = [
+    "🥚",
+    "🐣",
+    "🐥",
+    "🐔",
+    "🦅",
+    "🐉",
+    "👑",
+    "🌟",
+    "🚀"
+];
+
+const SIZE = 16;
+let board = [];
+let score = 0;
+let selected = null;
+let gameOver = false;
+
+function newGame() {
+    board = Array(SIZE).fill(0);
+    score = 0;
+    selected = null;
+    gameOver = false;
+
+    for (let i = 0; i < 3; i++) {
+        spawnCharacter();
+    }
+
+    updateGame();
+    document.getElementById("message").textContent =
+        "Pilih dua karakter yang sama!";
+}
+
+function spawnCharacter() {
+    const empty = [];
+
+    board.forEach((value, index) => {
+        if (value === 0) empty.push(index);
+    });
+
+    if (empty.length === 0) return false;
+
+    const position = empty[
+        Math.floor(Math.random() * empty.length)
+    ];
+
+    board[position] = 1 + Math.floor(Math.random() * 2);
+
+    return true;
+}
+
+function selectCell(index) {
+    if (gameOver || board[index] === 0) return;
+
+    if (selected === null) {
+        selected = index;
+        updateGame();
+        return;
+    }
+
+    if (selected === index) {
+        selected = null;
+        updateGame();
+        return;
+    }
+
+    if (board[selected] === board[index]) {
+        const nextLevel = board[index] + 1;
+
+        board[index] = nextLevel;
+        board[selected] = 0;
+
+        score += nextLevel * 10;
+
+        selected = null;
+
+        document.getElementById("message").textContent =
+            "🎉 Evolusi berhasil!";
+
+        if (nextLevel === characters.length) {
+            document.getElementById("message").textContent =
+                "🏆 EVOLUSI MAKSIMUM!";
+        }
+
+        updateGame();
+
+        return;
+    }
+
+    selected = index;
+
+    document.getElementById("message").textContent =
+        "Karakter tidak sama! Cari pasangan yang cocok.";
+
+    updateGame();
+}
+
+function updateGame() {
+    const game = document.getElementById("game");
+
+    game.innerHTML = "";
+
+    board.forEach((value, index) => {
+        const cell = document.createElement("div");
+
+        cell.className = "cell";
+
+        if (selected === index) {
+            cell.classList.add("selected");
+        }
+
+        cell.textContent = value === 0
+            ? ""
+            : characters[Math.min(value - 1, characters.length - 1)];
+
+        cell.addEventListener("click", () => selectCell(index));
+
+        game.appendChild(cell);
+    });
+
+    document.getElementById("score").textContent = score;
+
+    const highest = Math.max(...board);
+
+    document.getElementById("level").textContent =
+        highest === 0 ? 1 : highest;
+
+    if (board.every(value => value !== 0)) {
+        gameOver = true;
+        document.getElementById("message").textContent =
+            "Game Over! Tekan Game Baru untuk bermain lagi.";
+    }
+}
+
+newGame();
+</script>
+
+</body>
+</html>
